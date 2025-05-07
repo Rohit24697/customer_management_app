@@ -52,4 +52,23 @@ class DatabaseHelper {
     );
     return maps.map((e) => Customer.fromMap(e)).toList();
   }
+
+  Future<int> updateCustomer(Customer customer) async {
+    final dbClient = await db;
+    return await dbClient.update(
+      'customers',
+      customer.toMap(),
+      where: 'id = ?',
+      whereArgs: [customer.id],
+    );
+  }
+
+  Future<int> deleteCustomer(int id) async {
+    final dbClient = await db;
+    return await dbClient.delete(
+      'customers',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }

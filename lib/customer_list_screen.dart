@@ -30,15 +30,26 @@ class CustomerListScreen extends StatelessWidget {
           itemCount: controller.customerList.length,
           itemBuilder: (context, index) {
             final customer = controller.customerList[index];
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: customer.imagePath.isNotEmpty
-                    ? FileImage(File(customer.imagePath))
-                    : null,
-                child: customer.imagePath.isEmpty ? Icon(Icons.person) : null,
+            return Card( // Wrap ListTile with Card
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Add margin for spacing
+              elevation: 2, // Add a subtle shadow
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: customer.imagePath.isNotEmpty
+                      ? FileImage(File(customer.imagePath))
+                      : null,
+                  child: customer.imagePath.isEmpty ? Icon(Icons.person) : null,
+                ),
+                title: Text(customer.fullName),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Phone: ${customer.phone}"),
+                    Text("Email: ${customer.email}"),
+                    Text("Address: ${customer.address}"),
+                  ],
+                ),
               ),
-              title: Text(customer.fullName),
-              subtitle: Text(customer.phone),
             );
           },
         );
