@@ -5,6 +5,7 @@
 // import 'package:image_picker/image_picker.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 //
+// import 'customer_list_screen.dart';
 // import 'database/shared_preferences_helper.dart';
 // import 'full_screen_image.dart';
 //
@@ -35,7 +36,7 @@
 //     final prefs = await SharedPreferences.getInstance();
 //     final savedImagePath = prefs.getString("profile_image");
 //
-//     if (!mounted) return; //
+//     if (!mounted) return; // Ensure widget is still in tree
 //
 //     setState(() {
 //       _nameController.text = data['name'] ?? '';
@@ -48,7 +49,6 @@
 //     });
 //   }
 //
-//
 //   Future<void> _saveData() async {
 //     if (_formKey.currentState!.validate()) {
 //       await SharedPreferencesHelper.saveProfileData(
@@ -58,24 +58,36 @@
 //         address: _addressController.text,
 //         imagePath: _imageFile?.path ?? '',
 //       );
+//
+//       if (!mounted) return;
+//
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         const SnackBar(content: Text("User saved successfully")),
+//       );
+//
+//       // Navigate to CustomerListScreen
+//       Navigator.pushReplacement(
+//         context,
+//         MaterialPageRoute(builder: (_) => CustomerListScreen()), // Replace with your actual CustomerListScreen widget
 //       );
 //     }
 //   }
 //
+//
 //   Future<void> _pickImage(ImageSource source) async {
 //     final pickedFile = await _picker.pickImage(source: source, imageQuality: 80);
+//     if (!mounted) return;
+//
 //     if (pickedFile != null) {
-//       if (!mounted) return; //
 //       setState(() {
 //         _imageFile = File(pickedFile.path);
 //       });
+//
 //       final prefs = await SharedPreferences.getInstance();
+//       if (!mounted) return; // Ensure widget is still in tree
 //       await prefs.setString("profile_image", pickedFile.path);
 //     }
 //   }
-//
 //
 //   Future<void> _showImageSourceDialog() async {
 //     await showDialog(
@@ -106,8 +118,10 @@
 //               title: const Text("Remove"),
 //               onTap: () async {
 //                 Navigator.pop(context);
+//                 if (!mounted) return;
 //                 setState(() => _imageFile = null);
 //                 final prefs = await SharedPreferences.getInstance();
+//                 if (!mounted) return;
 //                 await prefs.remove("profile_image");
 //               },
 //             ),
@@ -116,6 +130,15 @@
 //       ),
 //     );
 //   }
+//
+//   // @override
+//   // void dispose() {
+//   //   _nameController.dispose();
+//   //   _emailController.dispose();
+//   //   _mobileController.dispose();
+//   //   _addressController.dispose();
+//   //   super.dispose();
+//   // }
 //
 //   @override
 //   Widget build(BuildContext context) {
@@ -140,24 +163,51 @@
 //                       );
 //                     }
 //                   },
-//                   child: Stack(
+//                   child:
+//                   Stack(
 //                     children: [
-//                       CircleAvatar(
-//                         radius: 60,
-//                         backgroundColor: Colors.grey.shade300,
-//                         backgroundImage: _imageFile != null
-//                             ? FileImage(_imageFile!)
-//                             : const AssetImage('assets/default_avatar.png') as ImageProvider,
+//                       GestureDetector(
+//                         onTap: () {
+//                           if (_imageFile != null) {
+//                             Navigator.push(
+//                               context,
+//                               MaterialPageRoute(
+//                                 builder: (context) => FullScreenImage(imageFile: _imageFile!),
+//                               ),
+//                             );
+//                           }
+//                         },
+//                         child: Container(
+//                           width: 150,
+//                           height: 150,
+//                           decoration: BoxDecoration(
+//                             color: Colors.grey.shade300,
+//                             shape: BoxShape.circle,
+//                             image: _imageFile != null
+//                                 ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
+//                                 : null,
+//                           ),
+//                           child: _imageFile == null
+//                               ? Icon(
+//                             Icons.person_2,
+//                             size: 80.0,
+//                             color: Colors.grey.shade800,
+//                           )
+//                               : null,
+//                         ),
 //                       ),
 //                       Positioned(
 //                         bottom: 0,
 //                         right: 0,
 //                         child: InkWell(
 //                           onTap: _showImageSourceDialog,
-//                           child: const CircleAvatar(
+//                           child: CircleAvatar(
 //                             backgroundColor: Colors.blue,
-//                             radius: 20,
-//                             child: Icon(Icons.camera_alt, color: Colors.white),
+//                             radius: 20.0,
+//                             child: Icon(
+//                               Icons.camera_alt_rounded,
+//                               color: Colors.white,
+//                             ),
 //                           ),
 //                         ),
 //                       ),
@@ -239,6 +289,7 @@
 //                         _addressController.clear();
 //                         final prefs = await SharedPreferences.getInstance();
 //                         await prefs.remove("profile_image");
+//                         if (!mounted) return;
 //                         setState(() => _imageFile = null);
 //                         ScaffoldMessenger.of(context).showSnackBar(
 //                           const SnackBar(content: Text("Profile data cleared")),
@@ -282,11 +333,8 @@
 //   }
 // }
 //
-//
-
 
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -323,17 +371,16 @@ class _ProfilePageState extends State<ProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     final savedImagePath = prefs.getString("profile_image");
 
-    if (!mounted) return; // Ensure widget is still in tree
+    _nameController.text = data['name'] ?? '';
+    _emailController.text = data['email'] ?? '';
+    _mobileController.text = data['mobile'] ?? '';
+    _addressController.text = data['address'] ?? '';
 
-    setState(() {
-      _nameController.text = data['name'] ?? '';
-      _emailController.text = data['email'] ?? '';
-      _mobileController.text = data['mobile'] ?? '';
-      _addressController.text = data['address'] ?? '';
-      if (savedImagePath != null && File(savedImagePath).existsSync()) {
+    if (savedImagePath != null && File(savedImagePath).existsSync() && mounted) {
+      setState(() {
         _imageFile = File(savedImagePath);
-      }
-    });
+      });
+    }
   }
 
   Future<void> _saveData() async {
@@ -352,14 +399,12 @@ class _ProfilePageState extends State<ProfilePage> {
         const SnackBar(content: Text("User saved successfully")),
       );
 
-      // Navigate to CustomerListScreen
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => CustomerListScreen()), // Replace with your actual CustomerListScreen widget
+        MaterialPageRoute(builder: (_) => CustomerListScreen()),
       );
     }
   }
-
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source, imageQuality: 80);
@@ -371,7 +416,6 @@ class _ProfilePageState extends State<ProfilePage> {
       });
 
       final prefs = await SharedPreferences.getInstance();
-      if (!mounted) return; // Ensure widget is still in tree
       await prefs.setString("profile_image", pickedFile.path);
     }
   }
@@ -405,11 +449,10 @@ class _ProfilePageState extends State<ProfilePage> {
               title: const Text("Remove"),
               onTap: () async {
                 Navigator.pop(context);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove("profile_image");
                 if (!mounted) return;
                 setState(() => _imageFile = null);
-                final prefs = await SharedPreferences.getInstance();
-                if (!mounted) return;
-                await prefs.remove("profile_image");
               },
             ),
           ],
@@ -450,51 +493,34 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     }
                   },
-                  child:
-                  Stack(
+                  child: Stack(
                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          if (_imageFile != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => FullScreenImage(imageFile: _imageFile!),
-                              ),
-                            );
-                          }
-                        },
-                        child: Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            shape: BoxShape.circle,
-                            image: _imageFile != null
-                                ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
-                                : null,
-                          ),
-                          child: _imageFile == null
-                              ? Icon(
-                            Icons.person_2,
-                            size: 80.0,
-                            color: Colors.grey.shade800,
+                      Container(
+                        width: 150,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          shape: BoxShape.circle,
+                          image: _imageFile != null
+                              ? DecorationImage(
+                            image: FileImage(_imageFile!),
+                            fit: BoxFit.cover,
                           )
                               : null,
                         ),
+                        child: _imageFile == null
+                            ? Icon(Icons.person_2, size: 80.0, color: Colors.grey.shade800)
+                            : null,
                       ),
                       Positioned(
                         bottom: 0,
                         right: 0,
                         child: InkWell(
                           onTap: _showImageSourceDialog,
-                          child: CircleAvatar(
+                          child: const CircleAvatar(
                             backgroundColor: Colors.blue,
                             radius: 20.0,
-                            child: Icon(
-                              Icons.camera_alt_rounded,
-                              color: Colors.white,
-                            ),
+                            child: Icon(Icons.camera_alt_rounded, color: Colors.white),
                           ),
                         ),
                       ),
@@ -503,7 +529,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 24.0),
 
-                // Name
                 _buildTextField(
                   label: "Name",
                   controller: _nameController,
@@ -515,8 +540,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     return null;
                   },
                 ),
-
-                // Email
                 _buildTextField(
                   label: "Email",
                   controller: _emailController,
@@ -527,8 +550,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     return null;
                   },
                 ),
-
-                // Mobile
                 _buildTextField(
                   label: "Mobile",
                   controller: _mobileController,
@@ -544,8 +565,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     return null;
                   },
                 ),
-
-                // Address
                 _buildTextField(
                   label: "Address",
                   controller: _addressController,
@@ -558,8 +577,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
 
                 const SizedBox(height: 30.0),
-
-                // Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
