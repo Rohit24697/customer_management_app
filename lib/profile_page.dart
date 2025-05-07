@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'customer_list_screen.dart';
-import 'database/shared_preferences_helper.dart';
+import 'database/database_helper.dart';
+import 'models/customer.dart';
 import 'full_screen_image.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -24,48 +24,33 @@ class _ProfilePageState extends State<ProfilePage> {
   final ImagePicker _picker = ImagePicker();
   File? _imageFile;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSavedData();
-  }
-
-  Future<void> _loadSavedData() async {
-    final data = await SharedPreferencesHelper.loadProfileData();
-    final prefs = await SharedPreferences.getInstance();
-    final savedImagePath = prefs.getString("profile_image");
-
-    _nameController.text = data['name'] ?? '';
-    _emailController.text = data['email'] ?? '';
-    _mobileController.text = data['mobile'] ?? '';
-    _addressController.text = data['address'] ?? '';
-
-    if (savedImagePath != null && File(savedImagePath).existsSync() && mounted) {
-      setState(() {
-        _imageFile = File(savedImagePath);
-      });
-    }
-  }
-
   Future<void> _saveData() async {
-    if (_formKey.currentState!.validate()) {
-      await SharedPreferencesHelper.saveProfileData(
-        name: _nameController.text,
+    if (_formKey.currentState!.validate() && _imageFile != null) {
+      final customer = Customer(
+        fullName: _nameController.text,
         email: _emailController.text,
-        mobile: _mobileController.text,
+        phone: _mobileController.text,
         address: _addressController.text,
-        imagePath: _imageFile?.path ?? '',
+        imagePath: _imageFile!.path,
       );
+
+      await DatabaseHelper.instance.insertCustomer(customer);
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("User saved successfully")),
+        const SnackBar(content: Text("Customer saved successfully")),
       );
+
+      _clearForm();
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => CustomerListScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all fields and select a profile image")),
       );
     }
   }
@@ -78,9 +63,6 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _imageFile = File(pickedFile.path);
       });
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("profile_image", pickedFile.path);
     }
   }
 
@@ -111,10 +93,8 @@ class _ProfilePageState extends State<ProfilePage> {
             ListTile(
               leading: const Icon(Icons.delete),
               title: const Text("Remove"),
-              onTap: () async {
+              onTap: () {
                 Navigator.pop(context);
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.remove("profile_image");
                 if (!mounted) return;
                 setState(() => _imageFile = null);
               },
@@ -123,6 +103,14 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
+  }
+
+  void _clearForm() {
+    _nameController.clear();
+    _emailController.clear();
+    _mobileController.clear();
+    _addressController.clear();
+    setState(() => _imageFile = null);
   }
 
   @override
@@ -137,7 +125,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile Registration'), centerTitle: true),
+      appBar: AppBar(title: const Text('Add Customer'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: SingleChildScrollView(
@@ -250,17 +238,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: const Text("Save"),
                     ),
                     ElevatedButton(
-                      onPressed: () async {
-                        _nameController.clear();
-                        _emailController.clear();
-                        _mobileController.clear();
-                        _addressController.clear();
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.remove("profile_image");
-                        if (!mounted) return;
-                        setState(() => _imageFile = null);
+                      onPressed: () {
+                        _clearForm();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Profile data cleared")),
+                          const SnackBar(content: Text("Form cleared")),
                         );
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -300,4 +281,3 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
-

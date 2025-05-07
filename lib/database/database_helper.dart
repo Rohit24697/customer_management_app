@@ -16,59 +16,93 @@ class DatabaseHelper {
 
   Future<Database> _initDb() async {
     final path = join(await getDatabasesPath(), 'customers.db');
-    return openDatabase(path, version: 1, onCreate: _createDb);
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: _createDb,
+    );
   }
 
   Future _createDb(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE customers(
+      CREATE TABLE customers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        fullName TEXT,
-        phone TEXT,
+        fullName TEXT NOT NULL,
+        phone TEXT NOT NULL,
         email TEXT,
         address TEXT,
-        imagePath TEXT
+        imagePath TEXT NOT NULL
       )
     ''');
   }
 
+  // Insert new customer
   Future<int> insertCustomer(Customer customer) async {
-    final dbClient = await db;
-    return await dbClient.insert('customers', customer.toMap());
+    try {
+      final dbClient = await db;
+      return await dbClient.insert('customers', customer.toMap());
+    } catch (e) {
+      print("Insert Error: $e");
+      return -1;
+    }
   }
 
+  // Fetch all customers
   Future<List<Customer>> fetchCustomers() async {
-    final dbClient = await db;
-    final maps = await dbClient.query('customers');
-    return maps.map((map) => Customer.fromMap(map)).toList();
+    try {
+      final dbClient = await db;
+      final maps = await dbClient.query('customers');
+      return maps.map((map) => Customer.fromMap(map)).toList();
+    } catch (e) {
+      print("Fetch Error: $e");
+      return [];
+    }
   }
 
+  // Search customers by name or phone
   Future<List<Customer>> searchCustomers(String query) async {
-    final dbClient = await db;
-    final maps = await dbClient.query(
-      'customers',
-      where: 'fullName LIKE ? OR phone LIKE ?',
-      whereArgs: ['%$query%', '%$query%'],
-    );
-    return maps.map((e) => Customer.fromMap(e)).toList();
+    try {
+      final dbClient = await db;
+      final maps = await dbClient.query(
+        'customers',
+        where: 'fullName LIKE ? OR phone LIKE ?',
+        whereArgs: ['%$query%', '%$query%'],
+      );
+      return maps.map((map) => Customer.fromMap(map)).toList();
+    } catch (e) {
+      print("Search Error: $e");
+      return [];
+    }
   }
 
+  // Update existing customer
   Future<int> updateCustomer(Customer customer) async {
-    final dbClient = await db;
-    return await dbClient.update(
-      'customers',
-      customer.toMap(),
-      where: 'id = ?',
-      whereArgs: [customer.id],
-    );
+    try {
+      final dbClient = await db;
+      return await dbClient.update(
+        'customers',
+        customer.toMap(),
+        where: 'id = ?',
+        whereArgs: [customer.id],
+      );
+    } catch (e) {
+      print("Update Error: $e");
+      return -1;
+    }
   }
 
+  // Delete customer by ID
   Future<int> deleteCustomer(int id) async {
-    final dbClient = await db;
-    return await dbClient.delete(
-      'customers',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    try {
+      final dbClient = await db;
+      return await dbClient.delete(
+        'customers',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      print("Delete Error: $e");
+      return -1;
+    }
   }
 }

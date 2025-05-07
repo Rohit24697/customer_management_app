@@ -21,8 +21,25 @@ class CustomerController extends GetxController {
     fetchCustomers();
   }
 
-  Future<void> searchCustomer(String query) async {
-    final result = await DatabaseHelper.instance.searchCustomers(query);
-    customerList.assignAll(result);
+  // Future<void> searchCustomer(String query) async {
+  //   final result = await DatabaseHelper.instance.searchCustomers(query);
+  //   customerList.assignAll(result);
+  // }
+
+  Future<void> fetchPaginatedCustomers(int page, int pageSize) async {
+    final allCustomers = await DatabaseHelper.instance.fetchCustomers();
+    final paginated = allCustomers.skip((page - 1) * pageSize).take(pageSize).toList();
+    customerList.addAll(paginated);
   }
+
+  Future<void> searchCustomer(String query) async {
+    if (query.isEmpty) {
+      fetchCustomers(); // reset to full list
+    } else {
+      final result = await DatabaseHelper.instance.searchCustomers(query);
+      customerList.value = result;
+    }
+  }
+
+
 }

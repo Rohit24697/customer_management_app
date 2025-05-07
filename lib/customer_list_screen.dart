@@ -1,11 +1,50 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'controllers/customer_controller.dart';
+import 'customer_search.dart';
+import 'models/customer.dart';
 import 'profile_page.dart';
 
-class CustomerListScreen extends StatelessWidget {
+class CustomerListScreen extends StatefulWidget {
+  @override
+  State<CustomerListScreen> createState() => _CustomerListScreenState();
+}
+
+class _CustomerListScreenState extends State<CustomerListScreen> {
   final controller = Get.put(CustomerController());
+  final ScrollController _scrollController = ScrollController();
+  int _page = 1;
+  final int _pageSize = 10;
+  bool _isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    controller.fetchPaginatedCustomers(_page, _pageSize);
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50 &&
+        !_isLoadingMore) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _isLoadingMore = true);
+    _page++;
+    await controller.fetchPaginatedCustomers(_page, _pageSize);
+    setState(() => _isLoadingMore = false);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,16 +62,25 @@ class CustomerListScreen extends StatelessWidget {
         ],
       ),
       body: Obx(() {
-        if (controller.customerList.isEmpty) {
+        final customers = controller.customerList;
+        if (customers.isEmpty) {
           return const Center(child: Text("No customers found"));
         }
         return ListView.builder(
-          itemCount: controller.customerList.length,
+          controller: _scrollController,
+          itemCount: customers.length + (_isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
-            final customer = controller.customerList[index];
-            return Card( // Wrap ListTile with Card
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Add margin for spacing
-              elevation: 2, // Add a subtle shadow
+            if (index >= customers.length) {
+              return const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final customer = customers[index];
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              elevation: 2,
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundImage: customer.imagePath.isNotEmpty
@@ -63,49 +111,4 @@ class CustomerListScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class CustomerSearch extends SearchDelegate {
-  final CustomerController controller;
-
-  CustomerSearch(this.controller);
-
-  @override
-  List<Widget>? buildActions(BuildContext context) => [
-    IconButton(
-        onPressed: () {
-          query = '';
-          controller.fetchCustomers();
-        },
-        icon: const Icon(Icons.clear)),
-  ];
-
-  @override
-  Widget? buildLeading(BuildContext context) => IconButton(
-    onPressed: () => close(context, null),
-    icon: const Icon(Icons.arrow_back),
-  );
-
-  @override
-  Widget buildResults(BuildContext context) {
-    controller.searchCustomer(query);
-    return Obx(() {
-      if (controller.customerList.isEmpty) {
-        return const Center(child: Text("No results"));
-      }
-      return ListView.builder(
-        itemCount: controller.customerList.length,
-        itemBuilder: (_, index) {
-          final c = controller.customerList[index];
-          return ListTile(
-            title: Text(c.fullName),
-            subtitle: Text(c.phone),
-          );
-        },
-      );
-    });
-  }
-
-  @override
-  Widget buildSuggestions(BuildContext context) => Container();
 }
