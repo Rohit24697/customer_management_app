@@ -19,4 +19,6 @@ Image picker
 validations
 
 ![image alt](https://github.com/Rohit24697/customer_management_app/blob/main/WhatsApp%20Image%202025-05-07%20at%208.37.59%20PM.jpeg?raw=true)
-
+![image alt](https://github.com/Rohit24697/customer_management_app/blob/main/WhatsApp%20Image%202025-05-07%20at%208.38.00%20PM%20(1).jpeg?raw=true)
+![image alt](https://github.com/Rohit24697/customer_management_app/blob/main/WhatsApp%20Image%202025-05-07%20at%208.38.00%20PM%20(2).jpeg?raw=true)
+![image alt](https://github.com/Rohit24697/customer_management_app/blob/main/WhatsApp%20Image%202025-05-07%20at%208.38.00%20PM.jpeg?raw=true)
