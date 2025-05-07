@@ -18,5 +18,5 @@ Observables
 Image picker
 validations
 
-
+![image alt](https://github.com/Rohit24697/customer_management_app/blob/main/WhatsApp%20Image%202025-05-07%20at%208.37.59%20PM.jpeg?raw=true)
 
